@@ -1,0 +1,18 @@
+---
+- name: Test Playbook
+  hosts: test
+  tasks:
+
+     - name : Check ntuple value
+       shell: ifconfig | grep ^eth | awk '{print $1}' | xargs -I % ethtool --show-features '%' | grep ntuple | awk '{print $2}' | xargs
+       register: result
+       failed_when: "'off off' not in result.stdout"
+
+     - name: Set inventory hostname variable
+       set_fact:
+         inventory_hostname_var: "{{ inventory_hostname }}"
+
+     - name: Trigger PagerDuty alert on condition failure
+       command: python trigger_pagerduty.py <token> "Condition failed on host {{ inventory_hostname_var }}" "Please turn on the ntuple"
+       when: result.stdout == "off off" or result.stdout == "on off" or result.stdout == "off on"
+       delegate_to: localhost
