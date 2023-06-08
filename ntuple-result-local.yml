@@ -1,0 +1,26 @@
+---
+- name: Test Playbook
+  hosts: test
+  tasks:
+     - name: Remove existing file
+       file:
+         path: /var/tmp/result1.txt
+         state: absent
+       delegate_to: localhost
+     - name: Remove existing file
+       file:
+         path: /var/tmp/result1.txt
+         state: touch
+       delegate_to: localhost
+
+     - name : Check ntuple value
+       shell: ifconfig | grep ^eth | awk '{print $1}' | xargs -I % ethtool --show-features '%' | grep ntuple | awk '{print $2}' | xargs
+       register: result
+
+     - name: Copy the output to local file
+       lineinfile:
+          path: /var/tmp/result1.txt
+          line: "{{ inventory_hostname }}: {{ result.stdout }}"
+       delegate_to: localhost
+       loop: "{{ play_hosts }}"
+       when: result.stdout == "off off" or result.stdout == "on off" or result.stdout == "off on"
