@@ -1,0 +1,30 @@
+# Shell Script to set the TTL value
+#!/bin/bash
+if [ "$#" -ne 1 ]
+then
+        echo "USAGE: $0 <filename>"
+        exit 1
+fi
+cd /var/tmp/
+if [ "${?}" -ne 0 ]
+then
+        echo "Could not navigate to path"
+        exit 1
+fi
+
+for host in `cat $1`
+do
+        cont=`host $host | cut -d. -f1`
+        ip=`host $host | awk '{print $NF}'`
+        echo "Updating TTL to 15 minutes for $vz"
+        host $host
+        #echo "$cont ---- $ip"
+        /usr/local/namesurfer/bin/nsctl update --zone example.com --setttl $cont 900 A $ip
+        sleep 2
+        if [[ "${?}" -ne 0 ]]
+        then
+            echo "Could not update TTL for $vz"
+            exit 1
+        fi
+        echo -e "Updated successfully\n"
+done
